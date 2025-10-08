@@ -1,6 +1,13 @@
 let posts = [];
 
 const postList = document.getElementById("postList");
+const fetchButton = document.getElementById('fetchButton');
+const errorDiv = document.getElementById('error');
+const postForm = document.getElementById('postForm');
+const formError = document.getElementById('formError');
+const formSuccess = document.getElementById('formSuccess');
+const titleInput = document.getElementById('titleInput');
+const bodyInput = document.getElementById('bodyInput');
 
 function renderPosts() {
   for (let i = 0; i < posts.length; i++) {
@@ -25,35 +32,45 @@ document.addEventListener("click", function (event) {
   }
 });
 
-document.addEventListener("click", function (event) {
-  if (event.target.id === "submit") {
-    const postRequest = {
-      method: "POST", // Specify the HTTP method as POST
-      headers: {
-        "Content-Type": "application/json", // Inform the server that the body is JSON
-      },
-    };
-    fetch("https://jsonplaceholder.typicode.com/posts").then((response) => {
-      response.json(postRequest);
-    });
+postForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  formError.textContent = '';
+  formSuccess.textContent = '';
+
+  const newPost = {
+    title: titleInput.value.trim(),
+    body: bodyInput.value.trim(),
+    userId: 1
+  };
+
+  if (!newPost.title || !newPost.body) {
+    formError.textContent = 'Please fill out both fields.';
+    return;
   }
-});
 
-// const options = {
-//     method: 'POST', // Specify the HTTP method as POST
-//     headers: {
-//         'Content-Type': 'application/json' // Inform the server that the body is JSON
-//     },
-// };
+  try {
+    formSuccess.textContent = 'Sending post...';
 
-// if (event.target.id === 'cat-button') {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newPost)
+    });
 
-// 		fetch('https://api.thecatapi.com/v1/images/search?limit=10').then(response => {
-// 			response.json().then(data => {
-// 				console.log(data);
-// 				result.innerHTML = '';
-// 				for (let obj of data) {
-// 					result.innerHTML = `<img src="${obj.url}" width=300px />`
-// 				}
-// 			});
-// 		})
+    if (!response.ok) {
+      throw new Error('Faild to create post.');
+    }
+
+    const data = await response.json();
+
+    formSuccess.textContent = `Post created! ID: ${data.id}`;
+
+    postForm.reset();
+  } catch (error) {
+    formError.textContent = `Error: ${error.message}`;
+    formSuccess.textContent = '';
+  }
+})
